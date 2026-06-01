@@ -10,29 +10,48 @@ export function AuthProvider({ children }) {
 
   async function loadProfile(userId) {
     if (!userId) { setProfile(null); return }
-    const { data } = await supabase
-      .from('staff_profiles')
-      .select('*')
-      .eq('id', userId)
-      .single()
-    setProfile(data ?? null)
+    try {
+      const { data } = await supabase
+        .from('staff_profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle()
+      setProfile(data ?? null)
+    } catch {
+      setProfile(null)
+    }
   }
 
   useEffect(() => {
     let active = true
-    supabase.auth.getSession().then(async ({ data }) => {
+
+    // Safety net: never let the app hang on a blocking "Loading…" screen.
+    const safety = setTimeout(() => { if (active) setLoading(false) }, 5000)
+
+    // Initial session check.
+    supabase.auth.getSession()
+      .then(async ({ data }) => {
+        if (!active) return
+        setSession(data.session)
+        await loadProfile(data.session?.user?.id)
+      })
+      .catch(() => { if (active) setSession(null) })
+      .finally(() => { if (active) { clearTimeout(safety); setLoading(false) } })
+
+    // IMPORTANT: this callback must stay synchronous. Awaiting another Supabase
+    // call inside it deadlocks supabase-js (it holds an auth lock), which is what
+    // caused the stuck "Loading…". Defer the profile fetch outside the lock.
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, sess) => {
       if (!active) return
-      setSession(data.session)
-      await loadProfile(data.session?.user?.id)
-      setLoading(false)
-    })
-
-    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, sess) => {
       setSession(sess)
-      await loadProfile(sess?.user?.id)
+      setTimeout(() => {
+        if (!active) return
+        if (sess?.user) loadProfile(sess.user.id)
+        else setProfile(null)
+      }, 0)
     })
 
-    return () => { active = false; sub.subscription.unsubscribe() }
+    return () => { active = false; clearTimeout(safety); sub.subscription.unsubscribe() }
   }, [])
 
   const value = {
