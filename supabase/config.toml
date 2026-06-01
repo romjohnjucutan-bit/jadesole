@@ -1,0 +1,5 @@
+# Supabase project config. Replace project_id after `supabase link`.
+project_id = "jade-sole"
+
+[functions.admin-staff]
+verify_jwt = true

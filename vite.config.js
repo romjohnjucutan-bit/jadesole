@@ -1,17 +1,11 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
+// Build a standard SPA into dist/ for Cloudflare Pages.
 export default defineConfig({
   plugins: [react()],
   build: {
-    outDir: 'assets/js/react',
+    outDir: 'dist',
     emptyOutDir: true,
-    rollupOptions: {
-      output: {
-        entryFileNames: 'main.js',
-        chunkFileNames: 'chunks/[name].js',
-        assetFileNames: 'assets/[name][extname]'
-      }
-    }
-  }
+  },
 })
