@@ -20,24 +20,12 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     let active = true
-
-    async function init() {
-      try {
-        const { data } = await supabase.auth.getSession()
-        if (!active) return
-        setSession(data.session)
-        await loadProfile(data.session?.user?.id)
-      } catch (err) {
-        // Avoid locking the UI if auth init fails.
-        if (!active) return
-        setSession(null)
-        setProfile(null)
-      } finally {
-        if (active) setLoading(false)
-      }
-    }
-
-    init()
+    supabase.auth.getSession().then(async ({ data }) => {
+      if (!active) return
+      setSession(data.session)
+      await loadProfile(data.session?.user?.id)
+      setLoading(false)
+    })
 
     const { data: sub } = supabase.auth.onAuthStateChange(async (_event, sess) => {
       setSession(sess)
