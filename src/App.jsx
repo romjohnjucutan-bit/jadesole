@@ -2,7 +2,6 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import StoreLayout from './components/StoreLayout'
 import AdminLayout from './components/AdminLayout'
 import ProtectedRoute from './components/ProtectedRoute'
-import PublicOnlyRoute from './components/PublicOnlyRoute'
 
 import Home from './pages/Home'
 import Menu from './pages/Menu'
@@ -20,7 +19,7 @@ export default function App() {
   return (
     <Routes>
       {/* Storefront */}
-      <Route element={<PublicOnlyRoute><StoreLayout /></PublicOnlyRoute>}>
+      <Route element={<StoreLayout />}>
         <Route path="/" element={<Home />} />
         <Route path="/menu" element={<Menu />} />
         <Route path="/order" element={<Order />} />
